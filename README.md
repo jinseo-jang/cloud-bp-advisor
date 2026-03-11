@@ -14,6 +14,103 @@
 - **테라폼 샌드박스**: GKE 기반의 격리된 실행 환경(gVisor), `init` 및 `plan` 단계만 수행하여 코드 유효성 검증.
 - **데이터 및 스트리밍**: `Firestore` (UI와 샌드박스 간의 실시간 로그 스트리밍), `Vertex AI` (장기 기억 Memory Bank).
 
+## 시스템 아키텍처 다이어그램
+
+```mermaid
+graph TD
+    %% User & External Network
+    User[User Browser] -->|HTTPS| UI["Streamlit Frontend (Cloud Run)"]
+
+    %% ========== AGENT BACKEND BOUNDARY ==========
+    subgraph "Agent Backend (LangGraph)"
+        UI <-->|"LangGraph State<br>(Synchronous Graph)"| Orchestrator["LangGraph E2E Workflow"]
+        
+        %% Long term / Short term Memory
+        Orchestrator <-->|"Read/Write Facts"| MemoryBank[(Vertex AI Memory Bank)]
+        Orchestrator <-->|"Session History"| FirestoreDB[(Firestore)]
+        UI <-->|"Poll UI Async State"| FirestoreDB
+    end
+    %% ==========================================
+
+    %% Deep Search & LLM Engine (External PaaS)
+    Orchestrator <-->|LLM API| Gemini["Gemini APIs (Flash/Pro)"]
+    Gemini <-->|MCP| Context7["Context7 (TF/Cloud Docs)"]
+    Gemini <-->|"Native Grounding"| GSearch["Google Search Index"]
+
+    %% Async Task Queue & Sandbox Validation
+    Orchestrator -->|Publish Job| PubSubJob["GCP Pub/Sub (Job Topic)"]
+    PubSubJob -->|Pull| SandboxWorker["Sandbox Worker (GKE Worker)"]
+    
+    subgraph "GKE Sandbox Node (Strict Isolation)"
+        SandboxWorker -->|"Init / Plan ONLY"| TFRuntime["Terraform Runtime"]
+    end
+
+    SandboxWorker -->|"Push Log Chunks / Terminal Output"| FirestoreDB
+```
+
+## 에이전트 워크플로우 (LangGraph)
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant UI as Streamlit UI
+    participant Graph as LangGraph Engine (E2E)
+    participant Arch as Architects (AWS/GCP)
+    participant Coder as TF Coder/Fixer
+    participant QA as QA Validator
+    participant Worker as Sandbox Worker (GKE)
+
+    %% Phase 1: Requirement to Proposal
+    User->>UI: 인프라 요구사항 입력
+    UI->>Graph: orchestrator 실행
+    Graph->>Arch: aws_architect & gcp_architect (병렬)
+    Graph-->>UI: 중단 (interrupt: feedback_review)
+    UI-->>User: AWS/GCP 설계안 비교 및 수정 요청 대기
+
+    %% HITL 1: Feedback Loop
+    alt 사용자가 수정을 요청할 경우
+        User->>UI: 아키텍처 수정 피드백 입력
+        UI->>Graph: feedback_review -> (aws_architect | gcp_architect) 루프
+        Graph-->>UI: 중단 (interrupt: feedback_review)
+    else 설계안 확정 시
+        User->>UI: 특정 클라우드 최종 승인
+    end
+
+    %% Phase 2: Code Generation & QA
+    UI->>Graph: tf_coder 실행
+    loop QA Self-Healing (Max 3 retries)
+        Graph->>Coder: tf_coder (HCL 생성)
+        Graph->>QA: qa_validator (보안/문법 검사)
+        alt 검사 통과 (PASS_SECURITY)
+            QA-->>Graph: Success
+        else 검사 실패 (FAIL_SECURITY)
+            QA-->>Coder: 피드백 반영 재요청
+        end
+    end
+    Graph-->>UI: 중단 (interrupt: approval_node)
+    UI-->>User: 보안 검증 완료된 코드 리뷰 및 배포 승인 대기
+
+    %% Phase 3: Sandbox Validation (Async)
+    User->>UI: 🚀 샌드박스 배포 승인
+    UI->>Graph: tf_runner 실행 (Pub/Sub 발행)
+    Graph->>Worker: Job 전송 (Init/Plan ONLY)
+    
+    loop Real-time Log Streaming
+        Worker->>UI: Firestore를 통한 터미널 로그 스트리밍
+    end
+
+    alt Sandbox Success
+        Worker-->>Graph: Success Status
+    else Sandbox Fail (Auto-Healing)
+        Worker-->>Graph: Fail Status + Logs
+        Graph->>Coder: tf_coder_sandbox_fix (에러 교정)
+        Graph->>Worker: 재시도 발송
+    end
+
+    Graph-->>UI: 최종 결과 (Markdown/Download URL) 반환
+    UI-->>User: 인프라 문서 및 테라폼 코드 제공
+```
+
 ## 디렉토리 구조
 
 프로젝트는 생산성 및 운영 표준을 준수하여 다음과 같이 구성되어 있습니다.
