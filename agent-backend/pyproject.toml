@@ -1,0 +1,16 @@
+[project]
+name = "cloud-bp-advisor-agent-backend"
+version = "0.1.0"
+requires-python = ">=3.11"
+description = "LangGraph-based 5-Agent Orchestration for Enterprise Cloud Architecture"
+dependencies = [
+    "langgraph>=0.0.39",
+    "langchain-google-genai>=1.0.0",
+    "fastapi>=0.111.0",
+    "uvicorn>=0.29.0",
+    "google-cloud-firestore>=2.15.0",
+    "google-cloud-pubsub>=2.21.1",
+    "pydantic>=2.7.1",
+    "python-dotenv",
+    "streamlit>=1.35.0"
+]

@@ -1,0 +1,14 @@
+Metadata-Version: 2.4
+Name: cloud-bp-advisor-agent-backend
+Version: 0.1.0
+Summary: LangGraph-based 5-Agent Orchestration for Enterprise Cloud Architecture
+Requires-Python: >=3.11
+Requires-Dist: langgraph>=0.0.39
+Requires-Dist: langchain-google-genai>=1.0.0
+Requires-Dist: fastapi>=0.111.0
+Requires-Dist: uvicorn>=0.29.0
+Requires-Dist: google-cloud-firestore>=2.15.0
+Requires-Dist: google-cloud-pubsub>=2.21.1
+Requires-Dist: pydantic>=2.7.1
+Requires-Dist: python-dotenv
+Requires-Dist: streamlit>=1.35.0

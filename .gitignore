@@ -1,0 +1,46 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environments
+.venv/
+env/
+venv/
+ENV/
+.env
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.backup
+*.tfvars
+.terraform.lock.hcl
+
+# Secrets and Keys
+.secrets/
+sa-key.json
+*.json
+!k8s/*.json  # Exclude specific required K8s configs if any, otherwise be safe
+!package.json # Keep JS package info
+!pyproject.toml # Keep Python project info
+
+# Logs and temporary files
+*.log
+artifacts/
+.benchmarks/
+.pytest_cache/
+
+# IDE and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# JetSki / Agent Generated
+.agent/
+.skills/
+
+# Project Specific
+streamlit_app.log
+memory_trace.log

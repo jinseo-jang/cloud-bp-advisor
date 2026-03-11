@@ -1,0 +1,7 @@
+grpcio==1.59.3
+grpcio-status==1.59.3
+google-cloud-pubsub>=2.21.1
+google-cloud-storage>=2.16.0
+google-cloud-discoveryengine>=0.11.1
+google-cloud-firestore>=2.15.0
+google-cloud-bigquery>=3.20.1

@@ -1,0 +1,4 @@
+namespace: cloud-bp-advisor
+resources:
+  - namespace.yaml
+  - sandbox-worker-deployment.yaml
